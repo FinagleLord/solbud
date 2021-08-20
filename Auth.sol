@@ -1,3 +1,4 @@
+pragma solidity ^0.8.6;
 
 contract Auth {
     
@@ -46,4 +47,8 @@ contract Auth {
         authority = who;
         emit AuthoritySet(who);
     }
+    
+    // function getFunction(string calldata signature) external pure returns (bytes4) {
+    //     return bytes4(keccak256(bytes(signature)));
+    // }
 }
