@@ -3,11 +3,13 @@ pragma solidity ^0.8.6;
 contract Auth {
     
     // --- events ---
-    event RoleSet(address who, bytes4 signature, bool canCall);
-
-    event TempRoleSet(address who, bytes4 signature);
+    event RolePushed(address who, string signature);
     
-    event AuthoritySet(address authority);
+    event RolePulled(address who, string signature);
+
+    event TempRolePushed(address who, string signature);
+    
+    event AuthorityPushed(address authority);
     
     // --- storage ---
     mapping(address => mapping(bytes4 => bool)) public hasRole;
@@ -33,22 +35,26 @@ contract Auth {
     }
     
     // --- auth controlled logic ---
-    function giveTempRole (address who, bytes4 signature) external auth {
-        hasTempRole[who][signature] = true;
-        emit TempRoleSet(who, signature);
+    function pushTempRole (address who, string calldata signature) external auth {
+        bytes4 sig = bytes4(keccak256(bytes(signature)));
+        hasTempRole[who][sig] = true;
+        emit TempRolePushed(who, signature);
     }
     
-    function giveRole (address who, bytes4 signature, bool canCall) external auth {
-        hasRole[who][signature] = canCall;
-        emit RoleSet(who, signature, canCall);
+    function pushRole (address who, string calldata signature) external auth {
+        bytes4 sig = bytes4(keccak256(bytes(signature)));
+        hasRole[who][sig] = true;
+        emit RolePushed(who, signature);
     }
     
-    function giveAuthority (address who) external auth {
+    function pullRole (address who, string calldata signature) external auth {
+        bytes4 sig = bytes4(keccak256(bytes(signature)));
+        hasRole[who][sig] = false;
+        emit RolePulled(who, signature);
+    }
+    
+    function pushAuthority (address who) external auth {
         authority = who;
-        emit AuthoritySet(who);
+        emit AuthorityPushed(who);
     }
-    
-    // function getFunction(string calldata signature) external pure returns (bytes4) {
-    //     return bytes4(keccak256(bytes(signature)));
-    // }
 }
