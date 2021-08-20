@@ -1,28 +1,49 @@
-pragma solidity ^0.8.6;
 
 contract Auth {
+    
     // --- events ---
-    event RoleChange(address who, bytes4 signature, bool canCall);
-    event AuthorityChange(address authority);
+    event RoleSet(address who, bytes4 signature, bool canCall);
+
+    event TempRoleSet(address who, bytes4 signature);
+    
+    event AuthoritySet(address authority);
     
     // --- storage ---
-    mapping(address => mapping(address => mapping(bytes4 => bool))) public hasRole;
-    address public authority;
+    mapping(address => mapping(bytes4 => bool)) public hasRole;
 
+    mapping(address => mapping(bytes4 => bool)) public hasTempRole;    
+
+    address public authority;
+    
+    uint private unlocked = 1;
+    
     // --- modifiers ---
     modifier auth() {
-        require(msg.sender == authority || hasRole[msg.sender][address(this)][msg.sig]);
+        require(msg.sender == authority || hasRole[msg.sender][msg.sig]);
         _;
+        hasTempRole[msg.sender][msg.sig] =  false;
     }
     
-    // --- public logic ---
-    function setRole (address who, address destination, bytes4 signature, bool canCall) external auth {
-        hasRole[who][destination][signature] = canCall;
-        emit RoleChange(who, signature, canCall);
+    modifier lock() {
+        require(unlocked > 0, "locked");
+        unlocked = 0;
+        _;
+        unlocked = 1;
     }
     
-    function setAuthority (address who) external auth {
+    // --- auth controlled logic ---
+    function giveTempRole (address who, bytes4 signature) external auth {
+        hasTempRole[who][signature] = true;
+        emit TempRoleSet(who, signature);
+    }
+    
+    function giveRole (address who, bytes4 signature, bool canCall) external auth {
+        hasRole[who][signature] = canCall;
+        emit RoleSet(who, signature, canCall);
+    }
+    
+    function giveAuthority (address who) external auth {
         authority = who;
-        emit AuthorityChange(who);
+        emit AuthoritySet(who);
     }
 }
